@@ -13,7 +13,6 @@ type MockSensorSource struct{}
 func (m *MockSensorSource) Subscribe(ctx context.Context) <-chan types.SensorData {
 	channel := make(chan types.SensorData)
 	go func() {
-		defer recover()
 		defer close(channel)
 		var data []int = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 		for _, d := range data {
@@ -30,6 +29,15 @@ func (m *MockSensorSource) Subscribe(ctx context.Context) <-chan types.SensorDat
 	
 	go func() {
 		<-ctx.Done()
+		select {
+			case _, ok := <-channel:
+				if ok {
+					close(channel)
+				}
+				return
+			default:
+				close(channel)
+		}
 	}()
 
 	return channel

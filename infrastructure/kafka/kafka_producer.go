@@ -2,9 +2,11 @@ package kafka
 
 import (
 	"AirPolMonitor/core/types"
+	"AirPolMonitor/observability"
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
@@ -20,6 +22,7 @@ func (p *KafkaProducer) Produce(ctx context.Context, data <-chan types.AirData) 
 		case <-ctx.Done():
 			return ctx.Err()
 		case d := <-data:
+			start := time.Now()
 			payload, err := json.Marshal(d)
 			if err != nil {
 				log.Printf("kafka: marshal AirData: %v", err)
@@ -27,6 +30,8 @@ func (p *KafkaProducer) Produce(ctx context.Context, data <-chan types.AirData) 
 			}
 			if err := p.ProduceMessage(payload); err != nil {
 				log.Printf("kafka: produce: %v", err)
+			} else {
+				observability.ObserveEventToKafka(time.Since(start))
 			}
 		}
 	}
