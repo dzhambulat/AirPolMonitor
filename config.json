@@ -1,0 +1,7 @@
+{
+    "mqtt_broker_url": "tcp://localhost:1883",
+    "mqtt_client_id": "air-pol-monitor",
+    "mqtt_topic": "air-pollution",
+    "kafka_broker_url": "localhost:9092",
+    "kafka_topic": "air-pollution-data"
+}

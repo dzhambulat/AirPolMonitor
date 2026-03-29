@@ -1,0 +1,16 @@
+# Prometheus config for AirPolMonitor; scrapes app metrics (run app with metrics on :9091)
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # AirPolMonitor app (run on host; use metrics port 9091)
+  - job_name: airpol-monitor
+    static_configs:
+      - targets: ["host.docker.internal:9091"]
+    metrics_path: /metrics
+    scrape_interval: 5s
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
