@@ -1,3 +1,5 @@
+[![Go](https://github.com/dzhambulat/AirPolMonitor/actions/workflows/go.yml/badge.svg)](https://github.com/dzhambulat/AirPolMonitor/actions/workflows/go.yml)
+
 # Air Pollution Monitor
 
 This application connects to an MQTT broker to receive air pollution data and sends it to a Kafka topic.
