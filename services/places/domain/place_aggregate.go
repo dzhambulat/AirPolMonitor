@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"fmt"
 )
 
 type SensorType int
@@ -15,11 +14,10 @@ const (
 	SensorTypeVOC
 )
 
-type AirSensorDataPayload struct {
-	PlaceID   string  `json:"PlaceID,omitempty"`
-	Value     float32 `json:"Value"`
-	Timestamp int64   `json:"Timestamp"`
-	SensorType SensorType `json:"SensorType"`
+type SensorData struct {
+	Value     float32
+	Timestamp int64
+	SensorType SensorType
 }
 
 // PlaceRepositoryPort persists and loads place aggregates.
@@ -32,6 +30,7 @@ type PlaceRepositoryPort interface {
 type PlaceAggregate struct {
 	id          string
 	name        string
+	requestedData []SensorData
 }
 
 func NewPlaceAggregate(id, name string, repo PlaceRepositoryPort) (*PlaceAggregate, error) {
@@ -50,24 +49,4 @@ func NewPlaceAggregate(id, name string, repo PlaceRepositoryPort) (*PlaceAggrega
 	return agg, nil
 }
 
-// ApplySensorData merges one air reading into this place aggregate.
-func (p *PlaceAggregate) ApplySensorData(r AirSensorDataPayload) error {
-	
-	return nil
-}
 
-
-// AddSensorDataToPlace loads the aggregate, applies the reading, and saves it.
-func AddSensorDataToPlace(ctx context.Context, repo PlaceRepositoryPort, placeID string, r AirSensorDataPayload) error {
-	if repo == nil {
-		return fmt.Errorf("place repository is nil")
-	}
-	agg, err := repo.Get(ctx, placeID)
-	if err != nil {
-		return err
-	}
-	if err := agg.ApplySensorData(r); err != nil {
-		return err
-	}
-	return repo.Save(ctx, agg)
-}
