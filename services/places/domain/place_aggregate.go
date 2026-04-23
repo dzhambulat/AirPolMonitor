@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"fmt"
 )
 
 type SensorType int
@@ -30,15 +31,26 @@ type PlaceRepositoryPort interface {
 type PlaceAggregate struct {
 	id          string
 	name        string
+	coordinates []float64
 	requestedData []SensorData
 }
 
-func NewPlaceAggregate(id, name string, repo PlaceRepositoryPort) (*PlaceAggregate, error) {
+// CreatePlace is an application command for creating a place aggregate.
+type EditPlaceCommand struct {
+	ID          string
+	Name        string
+	Coordinates []float64
+}
+
+func GetPlaceAggregate(id, name string, repo PlaceRepositoryPort) (*PlaceAggregate, error) {
 	if id == "" {
-		return &PlaceAggregate{
+		agg:= PlaceAggregate{
 			id: id,
 			name: name,
-		}, nil
+		}
+
+		repo.Save(context.Background(), &agg)
+		return &agg, nil
 	}
 
 	ctx:=context.Background()
@@ -47,6 +59,21 @@ func NewPlaceAggregate(id, name string, repo PlaceRepositoryPort) (*PlaceAggrega
 		return nil, err
 	}
 	return agg, nil
+}
+
+// HandleCreatePlace applies CreatePlace command data to this aggregate.
+func (p *PlaceAggregate) HandleEditPlaceCommand(cmd EditPlaceCommand) error {
+	if cmd.ID == "" {
+		return fmt.Errorf("place id is required")
+	}
+	if len(cmd.Coordinates) == 0 {
+		return fmt.Errorf("coordinates are required")
+	}
+
+	p.id = cmd.ID
+	p.name = cmd.Name
+	p.coordinates = append([]float64(nil), cmd.Coordinates...)
+	return nil
 }
 
 
