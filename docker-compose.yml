@@ -1,8 +1,17 @@
-# Local Kafka for development and testing
+# Local Kafka + MQTT for development and testing
 # Usage: docker compose up -d
-# Then run your app; config.json already uses localhost:9092
+# App uses localhost:9092 (Kafka) and localhost:1883 (MQTT)
 
 services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: airpol-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: unless-stopped
+
   kafka:
     image: bitnamilegacy/kafka:latest
     container_name: airpol-kafka
@@ -12,9 +21,9 @@ services:
       # KRaft mode (no Zookeeper); single node
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_PROCESS_ROLES: broker,controller
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
     healthcheck:
       test:
@@ -25,3 +34,76 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: airpol-prometheus
+    ports:
+      - "9090:9090"   # Prometheus UI and API
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: airpol-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_DEFAULT_THEME: light
+      GF_INSTALL_PLUGINS: ""
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  places:
+    image: golang:1.25
+    container_name: airpol-places
+    working_dir: /app/services/places
+    command: sh -c "go mod download && go run ."
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: air-pollution-data
+      KAFKA_GROUP_ID: places-service
+      PLACES_DEFAULT_PLACE_ID: default-place
+      PLACES_HTTP_ADDR: :8082
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./:/app
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: places-clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: places
+      CLICKHOUSE_USER: places_user
+      CLICKHOUSE_PASSWORD: places_password
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+    restart: unless-stopped
+
+volumes:
+  grafana-data:
+  clickhouse-data:
+  clickhouse-logs:

@@ -29,7 +29,7 @@ type PlaceRepositoryPort interface {
 
 // PlaceAggregate is a place-centric projection updated from sensor stream events.
 type PlaceAggregate struct {
-	id          string
+	Id          string
 	name        string
 	coordinates []float64
 	requestedData []SensorData
@@ -45,7 +45,7 @@ type EditPlaceCommand struct {
 func GetPlaceAggregate(id, name string, repo PlaceRepositoryPort) (*PlaceAggregate, error) {
 	if id == "" {
 		agg:= PlaceAggregate{
-			id: id,
+			Id: id,
 			name: name,
 		}
 
@@ -70,7 +70,7 @@ func (p *PlaceAggregate) HandleEditPlaceCommand(cmd EditPlaceCommand) error {
 		return fmt.Errorf("coordinates are required")
 	}
 
-	p.id = cmd.ID
+	p.Id = cmd.ID
 	p.name = cmd.Name
 	p.coordinates = append([]float64(nil), cmd.Coordinates...)
 	return nil

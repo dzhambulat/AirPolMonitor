@@ -1,10 +1,10 @@
-package main
+package sensors
 
 import (
 	"AirPolMonitor/config"
-	"AirPolMonitor/core"
-	"AirPolMonitor/infrastructure/kafka"
-	sensorsource "AirPolMonitor/infrastructure/sensor_source"
+	sensors "AirPolMonitor/services/sensors/core"
+	"AirPolMonitor/services/sensors/infrastructure/kafka"
+	"AirPolMonitor/services/sensors/infrastructure/mqtt"
 	"context"
 	"log"
 	"net/http"
@@ -45,8 +45,14 @@ func main() {
 		kafkaProducer.Close()
 	}()
 
-	mockSensorSource := sensorsource.NewMockSensorSource()
-	err = core.Start(ctx, 1, mockSensorSource, kafkaProducer)
+	mqttSensorSource := mqtt.NewSensorSource(mqtt.SubscriberConfig{
+		BrokerURL: cfg.MqttBrokerURL,
+		ClientID:  cfg.MqttClientID,
+		Topic:     cfg.MqttTopic,
+		QoS:       0,
+	})
+
+	err = sensors.Start(ctx, 1, mqttSensorSource, kafkaProducer)
 	if err != nil {
 		log.Fatal("cannot start core:", err)
 	}

@@ -5,6 +5,7 @@ import (
 	"AirPolMonitor/services/places/infrastructure"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 )
 
@@ -27,6 +28,7 @@ func RunSensorStream(ctx context.Context, raw <-chan []byte, repo *infrastructur
 		case <-ctx.Done():
 			return
 		case payload, ok := <-raw:
+			fmt.Println("payload: ", string(payload))
 			if !ok {
 				return
 			}
@@ -42,6 +44,8 @@ func RunSensorStream(ctx context.Context, raw <-chan []byte, repo *infrastructur
 				log.Printf("places: get place id by coordinates: %v", err)
 				continue
 			}
+
+			fmt.Println("placeID: ", msg.Coordinates, msg.SensorType, msg.Value, msg.Timestamp)
 
 			repo.Save(ctx, placeID, infrastructure.SensorData{
 				SensorType: msg.SensorType,

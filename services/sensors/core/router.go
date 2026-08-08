@@ -1,8 +1,9 @@
-package core
+package sensors
 
 import (
-	"AirPolMonitor/core/types"
+	"AirPolMonitor/services/sensors/types"
 	"context"
+	"errors"
 	"sync"
 )
 
@@ -10,6 +11,9 @@ import (
 func Start(ctx context.Context, numWorkers int, sensorSource types.ISensorSource, airDataProducer types.IAirPolDataProducer) error {
 	wg := sync.WaitGroup{}
 	var sensorData <-chan types.SensorData = sensorSource.Subscribe(ctx)
+	if sensorData == nil {
+		return errors.New("sensor data source is nil")
+	}
 	for i :=0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func() {

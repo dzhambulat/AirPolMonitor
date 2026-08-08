@@ -1,8 +1,8 @@
 package kafka
 
 import (
-	"AirPolMonitor/core/types"
 	"AirPolMonitor/observability"
+	"AirPolMonitor/services/sensors/types"
 	"context"
 	"encoding/json"
 	"log"

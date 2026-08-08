@@ -10,7 +10,7 @@ import (
 
 type MockSensorSource struct{}
 
-func (m *MockSensorSource) Subscribe(ctx context.Context) <-chan types.SensorData {
+func (m *MockSensorSource) Subscribe(ctx context.Context) (<-chan types.SensorData, error) {
 	channel := make(chan types.SensorData)
 	go func() {
 		defer close(channel)
@@ -40,7 +40,7 @@ func (m *MockSensorSource) Subscribe(ctx context.Context) <-chan types.SensorDat
 		}
 	}()
 
-	return channel
+	return channel, nil
 }
 
 func NewMockSensorSource() *MockSensorSource {
